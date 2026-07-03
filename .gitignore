@@ -10,9 +10,22 @@ desktop.ini
 *.swo
 *~
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
 # Home Assistant
 *.log
 *.db
 *.db-shm
 *.db-wal
-__pycache__/
+
+# Virtual environments
+venv/
+.venv/
+env/

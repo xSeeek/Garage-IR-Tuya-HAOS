@@ -1,0 +1,56 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar Puerta del Garage",
+        "description": "Configura tu portón de garage RF controlado mediante un puente IR/RF de Tuya.",
+        "data": {
+          "name": "Nombre del cover",
+          "open_entity": "Entidad para abrir (escena, script o botón)",
+          "close_entity": "Entidad para cerrar (escena, script o botón)",
+          "stop_entity": "Entidad para detener (opcional)",
+          "duration": "Duración del movimiento"
+        },
+        "data_description": {
+          "open_entity": "La entidad que acciona la apertura del portón.",
+          "close_entity": "La entidad que acciona el cierre del portón.",
+          "stop_entity": "Entidad opcional para detener el portón. Si no se configura, se usa el comando de dirección opuesta.",
+          "duration": "Cuánto tarda el portón en abrir o cerrar completamente (en segundos)."
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Las entidades de apertura y cierre deben ser diferentes."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ajustes de la Puerta del Garage",
+        "description": "Modifica la configuración de tu portón o fuerza el estado actual si se desfasó.",
+        "data": {
+          "open_entity": "Entidad para abrir",
+          "close_entity": "Entidad para cerrar",
+          "stop_entity": "Entidad para detener (opcional)",
+          "duration": "Duración del movimiento",
+          "force_state": "Forzar estado actual"
+        },
+        "data_description": {
+          "force_state": "Sobrescribe el estado actual si se desfasó con la puerta física. El valor se resetea después de aplicarse."
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Las entidades de apertura y cierre deben ser diferentes."
+    }
+  },
+  "selector": {
+    "force_state": {
+      "options": {
+        "no_change": "Sin cambios",
+        "open": "Abierto",
+        "closed": "Cerrado"
+      }
+    }
+  }
+}

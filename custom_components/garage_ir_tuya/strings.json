@@ -1,0 +1,56 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Garage Door Setup",
+        "description": "Configure your RF garage door controlled via a Tuya IR/RF bridge.",
+        "data": {
+          "name": "Cover name",
+          "open_entity": "Open entity (scene, script, or button)",
+          "close_entity": "Close entity (scene, script, or button)",
+          "stop_entity": "Stop entity (optional)",
+          "duration": "Movement duration"
+        },
+        "data_description": {
+          "open_entity": "The entity that triggers the garage door to open.",
+          "close_entity": "The entity that triggers the garage door to close.",
+          "stop_entity": "Optional entity to stop the door. If not set, the opposite direction command is used.",
+          "duration": "How long the door takes to fully open or close (in seconds)."
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Open and close entities must be different."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Garage Door Settings",
+        "description": "Modify your garage door configuration or force the current state if it got out of sync.",
+        "data": {
+          "open_entity": "Open entity",
+          "close_entity": "Close entity",
+          "stop_entity": "Stop entity (optional)",
+          "duration": "Movement duration",
+          "force_state": "Force current state"
+        },
+        "data_description": {
+          "force_state": "Override the current state if it got out of sync with the physical door. The value resets after being applied."
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Open and close entities must be different."
+    }
+  },
+  "selector": {
+    "force_state": {
+      "options": {
+        "no_change": "No change",
+        "open": "Open",
+        "closed": "Closed"
+      }
+    }
+  }
+}

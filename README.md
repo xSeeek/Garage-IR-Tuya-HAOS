@@ -1,146 +1,138 @@
-# 🏠 Garage IR Tuya — Portón de Garage para HomeKit
+# 🏠 Garage IR Tuya
 
 Convierte un portón de garage controlado por **radiofrecuencia (RF)** en un accesorio nativo de **Apple HomeKit**, usando un emisor IR/RF compatible con **Tuya** y **Home Assistant** como puente.
 
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025+-41BDF5?logo=homeassistant&logoColor=white)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1+-41BDF5?logo=homeassistant&logoColor=white)
 ![HomeKit](https://img.shields.io/badge/Apple%20HomeKit-Compatible-000000?logo=apple&logoColor=white)
-![Tuya](https://img.shields.io/badge/Tuya-Scenes-FF4800?logo=tuya&logoColor=white)
+![Tuya](https://img.shields.io/badge/Tuya-IR%2FRF%20Bridge-FF4800?logo=tuya&logoColor=white)
 
 ## ✨ Características
 
-- 🚗 **Garage door nativo en Apple Home** — Se muestra con el ícono correcto de puerta de garage
+- 🚗 **Garage door nativo en Apple Home** — Se muestra con el ícono correcto de puerta de garage via HomeKit Bridge
 - 🛡️ **Safeguard de doble-pulsación** — Maneja automáticamente el comportamiento del motor cuando se interrumpe un movimiento en curso
-- 📡 **Sin sensor necesario** — Funciona con estado asumido basado en timers
-- 🎯 **Abrir, Cerrar y Detener** — Las tres acciones soportadas
-- ⚙️ **Instalación simple** — Un solo archivo YAML como paquete de Home Assistant
+- ⚙️ **Configuración desde la UI** — Sin editar YAML. Selecciona entidades y ajusta el timer desde la interfaz de Home Assistant
+- 🔄 **Forzar estado** — Corrige el estado desde las opciones si se desfasó con la puerta física
+- 📡 **Sin sensor necesario** — Funciona con estado asumido basado en timers, con persistencia entre reinicios
+- 🌐 **Bilingüe** — Interfaz en español e inglés
 
 ## 📐 Arquitectura
 
 ```
-Apple Home (HomeKit) → Home Assistant (Template Cover) → Escenas Tuya → Caja IR/RF → Portón RF
+Apple Home (HomeKit) → Home Assistant (Cover Entity) → Escenas/Scripts Tuya → Caja IR/RF → Portón RF
 ```
 
 ## 📋 Requisitos
 
-- [Home Assistant](https://www.home-assistant.io/) 2025.1 o superior
+- [Home Assistant](https://www.home-assistant.io/) 2024.1 o superior
+- [HACS](https://hacs.xyz/) instalado
 - Integración de **Tuya** configurada en Home Assistant
-- Escenas de Tuya funcionando para abrir/cerrar el portón
+- Escenas o scripts funcionando para abrir/cerrar el portón
 - Integración **HomeKit Bridge** de Home Assistant ([documentación](https://www.home-assistant.io/integrations/homekit/))
 
 ## 🚀 Instalación
 
-### Paso 1: Habilitar Packages en Home Assistant
+### Paso 1: Agregar repositorio en HACS
 
-> [!NOTE]  
-> Si ya tienes `packages` habilitado, salta al **Paso 2**.
+1. Abre **HACS** en Home Assistant
+2. Ve a **Integraciones**
+3. Haz clic en el menú **⋮** (tres puntos, arriba a la derecha) → **Repositorios personalizados**
+4. Agrega:
+   - **URL**: `https://github.com/TU_USUARIO/garage-ir-tuya`
+   - **Categoría**: `Integración`
+5. Haz clic en **Agregar**
 
-Edita tu archivo `/config/configuration.yaml` y agrega lo siguiente dentro de la sección `homeassistant:`:
+### Paso 2: Instalar la integración
 
-```yaml
-homeassistant:
-  packages: !include_dir_named packages
-```
+1. Busca **"Garage IR Tuya"** en HACS
+2. Haz clic en **Descargar**
+3. **Reinicia Home Assistant**
 
-Si ya tienes la sección `homeassistant:`, solo agrega la línea de `packages:`.
+### Paso 3: Configurar la integración
 
-### Paso 2: Crear la carpeta `packages`
+1. Ve a **Ajustes → Dispositivos y servicios → + Agregar integración**
+2. Busca **"Garage IR Tuya"**
+3. Completa el formulario:
 
-Si no existe, crea la carpeta `packages` dentro de tu directorio de configuración de Home Assistant:
+| Campo | Descripción |
+|-------|-------------|
+| **Nombre del cover** | Nombre que aparecerá en HA y HomeKit (ej: "Puerta del Garage") |
+| **Entidad para abrir** | La escena, script o botón que abre el portón |
+| **Entidad para cerrar** | La escena, script o botón que cierra el portón |
+| **Entidad para detener** | *(Opcional)* Entidad para detener el movimiento |
+| **Duración del movimiento** | Segundos que tarda el portón en abrir/cerrar (5-120s) |
 
-```bash
-mkdir -p /config/packages
-```
+4. Haz clic en **Enviar** ✅
 
-### Paso 3: Descargar el paquete
+### Paso 4: Exponer a HomeKit (opcional)
 
-**Opción A — Desde la terminal de Home Assistant (SSH o Terminal Add-on):**
-
-```bash
-cd /config/packages
-curl -O https://raw.githubusercontent.com/TU_USUARIO/garage-ir-tuya/main/garage_door.yaml
-```
-
-**Opción B — Manualmente:**
-
-1. Descarga el archivo [`garage_door.yaml`](garage_door.yaml)
-2. Cópialo a `/config/packages/garage_door.yaml` usando:
-   - **Samba Share** — Accede a `\\HOMEASSISTANT\config\packages\` desde tu PC
-   - **File Editor Add-on** — Crea el archivo y pega el contenido
-   - **VS Code Add-on** — Abre la carpeta packages y crea el archivo
-
-### Paso 4: Personalizar las escenas (si es necesario)
-
-Abre `garage_door.yaml` y verifica que los `entity_id` de las escenas coincidan con los tuyos:
-
-```yaml
-# Busca estas líneas y ajusta si tus escenas tienen nombres diferentes:
-entity_id: scene.abre_el_estacionamiento     # ← Escena para ABRIR
-entity_id: scene.cierra_el_estacionamiento    # ← Escena para CERRAR
-```
-
-También puedes ajustar el **timer** si tu portón tarda más o menos de 15 segundos:
-
-```yaml
-timer:
-  garage_door:
-    duration: "00:00:15"    # ← Ajusta el tiempo aquí
-```
-
-### Paso 5: Configurar HomeKit Bridge
-
-> [!NOTE]
-> Si ya tienes HomeKit Bridge configurado y exponiendo todas las entidades, el cover se agregará automáticamente. Solo necesitas seguir este paso si filtras entidades manualmente.
-
-Agrega la entidad del cover a tu configuración de HomeKit en `/config/configuration.yaml`:
+Si usas **HomeKit Bridge** con filtro de entidades, agrega el cover:
 
 ```yaml
 homekit:
   - filter:
       include_entities:
         - cover.puerta_del_garage
-        # ... tus otras entidades ...
 ```
 
-### Paso 6: Reiniciar Home Assistant
+Si expones todas las entidades, el cover aparecerá automáticamente.
 
-1. Ve a **Ajustes → Sistema → Reiniciar**
-2. Después del reinicio, verifica que la entidad `cover.puerta_del_garage` aparezca en **Herramientas para desarrolladores → Estados**
+## ⚙️ Configuración Posterior
 
-### Paso 7: Agregar a Apple Home
+Para modificar la configuración después de la instalación:
 
-1. Abre la app **Home** en tu iPhone/iPad
-2. Si es la primera vez con HomeKit Bridge, escanea el código QR o ingresa el código de emparejamiento que aparece en las notificaciones de HA
-3. La **Puerta del Garage** debería aparecer automáticamente como accesorio
+1. Ve a **Ajustes → Dispositivos y servicios**
+2. Encuentra **Garage IR Tuya** → haz clic en **Configurar**
+3. Modifica los campos que necesites
+4. Usa **"Forzar estado actual"** si el estado se desfasó:
+   - **Sin cambios** — No modifica el estado
+   - **Abierto** — Fuerza el estado a abierto
+   - **Cerrado** — Fuerza el estado a cerrado
+
+> El valor de "Forzar estado" se resetea automáticamente después de aplicarse.
 
 ## 🛡️ Safeguard: Doble-Pulsación
 
-Este paquete maneja automáticamente el comportamiento peculiar de muchos motores de portón:
+Este componente maneja automáticamente el comportamiento peculiar de muchos motores de portón:
 
-> Si el portón se está **abriendo** y pides **cerrar**, la primera señal de cierre actúa como **"detener"**. Se necesita una segunda señal para que realmente **cierre**.
+> Si el portón se está **abriendo** y pides **cerrar**, la primera señal actúa como **"detener"**. Se necesita una segunda señal para que realmente **cierre**.
 
-### Lógica implementada:
+### Lógica implementada
 
 | Acción | Estado actual | Comportamiento |
 |--------|---------------|----------------|
 | **Abrir** | Cerrado | ✅ Abre normalmente (1 señal) |
 | **Abrir** | Cerrándose | 🛡️ Safeguard: detiene + abre (2 señales, 2s delay) |
-| **Abrir** | Abierto/Abriéndose | ⏭️ Ignora (ya abierto) |
+| **Abrir** | Abierto/Abriéndose | ⏭️ Ignora |
 | **Cerrar** | Abierto | ✅ Cierra normalmente (1 señal) |
 | **Cerrar** | Abriéndose | 🛡️ Safeguard: detiene + cierra (2 señales, 2s delay) |
-| **Cerrar** | Cerrado/Cerrándose | ⏭️ Ignora (ya cerrado) |
+| **Cerrar** | Cerrado/Cerrándose | ⏭️ Ignora |
 
 ## ⚠️ Limitaciones
 
-- **Sin sensor físico**: El estado del portón se basa en timers. Si alguien usa el control RF físico, Home Assistant no lo detectará y el estado podría desincronizarse.
-- **Solución futura**: Instalar un sensor de contacto ($5-10 USD) para tener feedback real del estado.
-- **Estado al reiniciar**: El portón siempre inicia como `closed` al reiniciar HA. Si estaba abierto, puedes corregirlo manualmente desde **Herramientas para desarrolladores → Estados**.
+- **Sin sensor físico**: El estado se basa en timers. Si alguien usa el control RF físico, Home Assistant no lo detectará.
+  - **Solución**: Usa "Forzar estado" en las opciones para corregirlo.
+  - **Solución permanente**: Instalar un sensor de contacto (~$5 USD).
+- **Estado al reiniciar**: Se restaura el último estado conocido. Si HA se reinició durante un movimiento, se asume que el movimiento terminó.
 
 ## 📁 Estructura
 
 ```
 garage-ir-tuya/
-├── garage_door.yaml          # Paquete de Home Assistant (el archivo principal)
-├── README.md                 # Este archivo
+├── custom_components/
+│   └── garage_ir_tuya/
+│       ├── __init__.py           # Setup de la integración
+│       ├── manifest.json         # Metadatos HA
+│       ├── config_flow.py        # UI de configuración
+│       ├── cover.py              # Cover entity con safeguard
+│       ├── const.py              # Constantes
+│       ├── strings.json          # Strings (inglés)
+│       └── translations/
+│           ├── en.json           # Inglés
+│           └── es.json           # Español
+├── hacs.json                     # Metadatos HACS
+├── README.md
+├── LICENSE
 └── .gitignore
 ```
 

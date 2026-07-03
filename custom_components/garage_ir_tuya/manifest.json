@@ -1,0 +1,13 @@
+{
+  "domain": "garage_ir_tuya",
+  "name": "Garage IR Tuya",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/TU_USUARIO/garage-ir-tuya",
+  "integration_type": "device",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/TU_USUARIO/garage-ir-tuya/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
