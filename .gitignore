@@ -1,0 +1,18 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Home Assistant
+*.log
+*.db
+*.db-shm
+*.db-wal
+__pycache__/

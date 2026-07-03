@@ -1,0 +1,281 @@
+# ============================================================
+# Home Assistant Package: Puerta del Garage via Tuya IR/RF
+# ============================================================
+#
+# Controla un portón de garage mediante escenas de Tuya (IR/RF)
+# con lógica de safeguard para el comportamiento de doble-pulsación
+# del motor y exposición a HomeKit como garage door nativo.
+#
+# Repo: https://github.com/TU_USUARIO/garage-ir-tuya
+# ============================================================
+#
+# CONFIGURACIÓN REQUERIDA:
+#   1. Ajusta los entity_id de las escenas Tuya si los tuyos
+#      son diferentes (busca "scene.abre_el_estacionamiento"
+#      y "scene.cierra_el_estacionamiento")
+#   2. Ajusta la duración del timer si tu portón tarda más o
+#      menos de 15 segundos
+#
+# INSTALACIÓN:
+#   Copiar este archivo a: /config/packages/garage_door.yaml
+#   Ver README.md para instrucciones detalladas.
+#
+# ============================================================
+
+# ------------------------------
+# State Tracking
+# ------------------------------
+# Rastrea el estado del portón sin sensor físico.
+# Estados: closed, opening, open, closing
+# Se reinicia a "closed" cuando HA se reinicia.
+
+input_select:
+  garage_door_state:
+    name: "Estado del Portón"
+    options:
+      - closed
+      - opening
+      - open
+      - closing
+    initial: closed
+    icon: mdi:garage-variant
+
+# ------------------------------
+# Timer
+# ------------------------------
+# Tiempo máximo que tarda el portón en abrir/cerrar.
+# Al expirar, el estado cambia de opening→open o closing→closed.
+
+timer:
+  garage_door:
+    name: "Timer Portón Garage"
+    duration: "00:00:15"
+    icon: mdi:timer-outline
+
+# ------------------------------
+# Scripts
+# ------------------------------
+
+script:
+  # --- ABRIR ---
+  garage_door_open:
+    alias: "Portón - Abrir"
+    description: >
+      Abre el portón del garage. Si el portón se está cerrando,
+      aplica safeguard de doble-pulsación (parar + abrir).
+    icon: mdi:garage-open-variant
+    mode: single
+    sequence:
+      - choose:
+          # CASO 1: El portón se está cerrando → Safeguard
+          # Primera pulsación para el movimiento, segunda lo abre.
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "closing"
+            sequence:
+              # Pulsación 1: Detener el cierre
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.abre_el_estacionamiento
+              - delay:
+                  seconds: 2
+              # Pulsación 2: Ahora sí, abrir
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.abre_el_estacionamiento
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "opening"
+              - action: timer.start
+                target:
+                  entity_id: timer.garage_door
+
+          # CASO 2: El portón está cerrado → Abrir normalmente
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "closed"
+            sequence:
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.abre_el_estacionamiento
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "opening"
+              - action: timer.start
+                target:
+                  entity_id: timer.garage_door
+
+        # DEFAULT: Ya está abierto o abriéndose → No hacer nada
+        default: []
+
+  # --- CERRAR ---
+  garage_door_close:
+    alias: "Portón - Cerrar"
+    description: >
+      Cierra el portón del garage. Si el portón se está abriendo,
+      aplica safeguard de doble-pulsación (parar + cerrar).
+    icon: mdi:garage-variant
+    mode: single
+    sequence:
+      - choose:
+          # CASO 1: El portón se está abriendo → Safeguard
+          # Primera pulsación para el movimiento, segunda lo cierra.
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "opening"
+            sequence:
+              # Pulsación 1: Detener la apertura
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.cierra_el_estacionamiento
+              - delay:
+                  seconds: 2
+              # Pulsación 2: Ahora sí, cerrar
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.cierra_el_estacionamiento
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "closing"
+              - action: timer.start
+                target:
+                  entity_id: timer.garage_door
+
+          # CASO 2: El portón está abierto → Cerrar normalmente
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "open"
+            sequence:
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.cierra_el_estacionamiento
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "closing"
+              - action: timer.start
+                target:
+                  entity_id: timer.garage_door
+
+        # DEFAULT: Ya está cerrado o cerrándose → No hacer nada
+        default: []
+
+  # --- DETENER ---
+  garage_door_stop:
+    alias: "Portón - Detener"
+    description: >
+      Detiene el movimiento del portón. Envía el comando opuesto
+      al movimiento actual para frenarlo. El estado queda como
+      "open" ya que el portón está parcialmente abierto.
+    icon: mdi:stop-circle-outline
+    mode: single
+    sequence:
+      - choose:
+          # Si se está abriendo → enviar cerrar para detener
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "opening"
+            sequence:
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.cierra_el_estacionamiento
+              - action: timer.cancel
+                target:
+                  entity_id: timer.garage_door
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "open"
+
+          # Si se está cerrando → enviar abrir para detener
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "closing"
+            sequence:
+              - action: scene.turn_on
+                target:
+                  entity_id: scene.abre_el_estacionamiento
+              - action: timer.cancel
+                target:
+                  entity_id: timer.garage_door
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "open"
+
+        # DEFAULT: No se está moviendo → No hacer nada
+        default: []
+
+# ------------------------------
+# Automatización: Timer Finalizado
+# ------------------------------
+# Cuando el timer expira, el portón terminó su movimiento.
+# Transiciona: opening → open, closing → closed
+
+automation:
+  - alias: "Portón - Movimiento Completado"
+    id: garage_door_movement_completed
+    description: >
+      Actualiza el estado del portón cuando el timer de movimiento
+      expira, indicando que el portón terminó de abrir o cerrar.
+    trigger:
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.garage_door
+    action:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "opening"
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "open"
+          - conditions:
+              - condition: state
+                entity_id: input_select.garage_door_state
+                state: "closing"
+            sequence:
+              - action: input_select.select_option
+                target:
+                  entity_id: input_select.garage_door_state
+                data:
+                  option: "closed"
+
+# ------------------------------
+# Template Cover (Entidad Principal)
+# ------------------------------
+# Esta es la entidad que aparece en HomeKit como "Puerta del Garage".
+# device_class: garage la muestra con el ícono correcto en Apple Home.
+
+template:
+  - cover:
+      - name: "Puerta del Garage"
+        unique_id: puerta_garage_cover
+        device_class: garage
+        state: "{{ states('input_select.garage_door_state') }}"
+        open_cover:
+          - action: script.garage_door_open
+        close_cover:
+          - action: script.garage_door_close
+        stop_cover:
+          - action: script.garage_door_stop
