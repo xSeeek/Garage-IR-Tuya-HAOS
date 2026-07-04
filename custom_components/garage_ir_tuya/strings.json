@@ -9,13 +9,15 @@
           "open_entity": "Open entity (scene, script, or button)",
           "close_entity": "Close entity (scene, script, or button)",
           "stop_entity": "Stop entity (optional)",
-          "duration": "Movement duration"
+          "duration": "Movement duration",
+          "cooldown": "Safeguard cooldown"
         },
         "data_description": {
           "open_entity": "The entity that triggers the garage door to open.",
           "close_entity": "The entity that triggers the garage door to close.",
           "stop_entity": "Optional entity to stop the door. If not set, the opposite direction command is used.",
-          "duration": "How long the door takes to fully open or close (in seconds)."
+          "duration": "How long the door takes to fully open or close (in seconds).",
+          "cooldown": "After a movement completes, the motor may need a double-press for this many minutes. Set to 0 to disable."
         }
       }
     },
@@ -33,6 +35,7 @@
           "close_entity": "Close entity",
           "stop_entity": "Stop entity (optional)",
           "duration": "Movement duration",
+          "cooldown": "Safeguard cooldown",
           "force_state": "Force current state"
         },
         "data_description": {

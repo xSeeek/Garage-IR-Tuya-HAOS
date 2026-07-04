@@ -22,9 +22,11 @@ from .const import (
     CONF_CLOSE_ENTITY,
     CONF_STOP_ENTITY,
     CONF_DURATION,
+    CONF_COOLDOWN,
     CONF_FORCE_STATE,
     DEFAULT_NAME,
     DEFAULT_DURATION,
+    DEFAULT_COOLDOWN,
     FORCE_STATE_NO_CHANGE,
     FORCE_STATE_OPEN,
     FORCE_STATE_CLOSED,
@@ -42,6 +44,12 @@ ENTITY_SELECTOR_OPTIONAL = selector.EntitySelector(
 DURATION_SELECTOR = selector.NumberSelector(
     selector.NumberSelectorConfig(
         min=5, max=120, step=1, unit_of_measurement="s", mode="slider"
+    )
+)
+
+COOLDOWN_SELECTOR = selector.NumberSelector(
+    selector.NumberSelectorConfig(
+        min=0, max=30, step=1, unit_of_measurement="min", mode="slider"
     )
 )
 
@@ -73,6 +81,10 @@ def _build_setup_schema(
                 CONF_DURATION,
                 default=defaults.get(CONF_DURATION, DEFAULT_DURATION),
             ): DURATION_SELECTOR,
+            vol.Required(
+                CONF_COOLDOWN,
+                default=defaults.get(CONF_COOLDOWN, DEFAULT_COOLDOWN),
+            ): COOLDOWN_SELECTOR,
         }
     )
 
@@ -99,6 +111,10 @@ def _build_options_schema(
                 CONF_DURATION,
                 default=current.get(CONF_DURATION, DEFAULT_DURATION),
             ): DURATION_SELECTOR,
+            vol.Required(
+                CONF_COOLDOWN,
+                default=current.get(CONF_COOLDOWN, DEFAULT_COOLDOWN),
+            ): COOLDOWN_SELECTOR,
             vol.Required(
                 CONF_FORCE_STATE,
                 default=FORCE_STATE_NO_CHANGE,

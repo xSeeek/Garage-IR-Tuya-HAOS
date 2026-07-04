@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 
 from homeassistant.components.cover import (
     CoverDeviceClass,
@@ -23,7 +24,9 @@ from .const import (
     CONF_CLOSE_ENTITY,
     CONF_STOP_ENTITY,
     CONF_DURATION,
+    CONF_COOLDOWN,
     DEFAULT_DURATION,
+    DEFAULT_COOLDOWN,
     DEFAULT_NAME,
     SAFEGUARD_DELAY,
     FORCE_STATE_OPEN,
@@ -52,8 +55,13 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
 
     Features:
     - Safeguard double-press: When interrupting a movement (e.g., closing
-      while opening), sends the command twice with a delay to handle
+      while opening) OR within the cooldown window after a movement
+      completes, sends the command twice with a delay to handle
       the motor's stop-then-act behavior.
+    - Cooldown window: Many garage motors "remember" their last action
+      for several minutes. During this window, the first press in the
+      opposite direction acts as a toggle/stop rather than the intended
+      action. The cooldown ensures double-press is used during this period.
     - Timer-based state: Tracks state using a timer since there's no
       physical sensor. After the configured duration, the state
       transitions from opening→open or closing→closed.
@@ -80,10 +88,12 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
         self._close_entity: str = self._get_config(CONF_CLOSE_ENTITY)
         self._stop_entity: str | None = self._get_config(CONF_STOP_ENTITY)
         self._duration: int = self._get_config(CONF_DURATION, DEFAULT_DURATION)
+        self._cooldown: int = self._get_config(CONF_COOLDOWN, DEFAULT_COOLDOWN)
 
         # Internal state
         self._state: str = STATE_CLOSED
         self._timer_unsub: callback | None = None
+        self._last_movement_time: float | None = None
 
         # Supported features
         features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
@@ -97,7 +107,7 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
             "name": self._get_config(CONF_COVER_NAME, DEFAULT_NAME),
             "manufacturer": "Tuya (IR/RF Bridge)",
             "model": "Garage Door Controller",
-            "sw_version": "1.0.0",
+            "sw_version": "1.1.0",
         }
 
     def _get_config(self, key: str, default: any = None) -> any:
@@ -178,24 +188,47 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
     # Cover actions
     # ------------------------------------------------------------------
 
+    def _in_cooldown(self) -> bool:
+        """Check if we're within the post-movement cooldown window.
+
+        Many garage motors 'remember' their last action for several
+        minutes. During this period, the first press in the opposite
+        direction toggles/stops instead of acting. Returns True if
+        the safeguard double-press should be used.
+        """
+        if self._cooldown <= 0 or self._last_movement_time is None:
+            return False
+        elapsed = time.monotonic() - self._last_movement_time
+        cooldown_seconds = self._cooldown * 60
+        in_cooldown = elapsed < cooldown_seconds
+        if in_cooldown:
+            _LOGGER.debug(
+                "Garage IR Tuya: Within cooldown window (%.0fs / %ds)",
+                elapsed,
+                cooldown_seconds,
+            )
+        return in_cooldown
+
     async def async_open_cover(self, **kwargs) -> None:
         """Open the garage door.
 
-        If the door is currently closing, applies the safeguard:
-        sends open twice with a delay (first to stop, second to open).
+        Applies safeguard double-press when:
+        - The door is currently closing (interrupting movement), OR
+        - We're within the cooldown window after the last movement.
         """
         if self._state in (STATE_OPEN, STATE_OPENING):
             _LOGGER.debug("Garage IR Tuya: Already open/opening, ignoring")
             return
 
-        if self._state == STATE_CLOSING:
-            # Safeguard: door is closing → stop it, then open
-            _LOGGER.info("Garage IR Tuya: Safeguard — interrupting close to open")
+        if self._state == STATE_CLOSING or self._in_cooldown():
+            # Safeguard: double-press needed
+            reason = "interrupting close" if self._state == STATE_CLOSING else "cooldown active"
+            _LOGGER.info("Garage IR Tuya: Safeguard (%s) — double-press open", reason)
             await self._activate_entity(self._open_entity)
             await asyncio.sleep(SAFEGUARD_DELAY)
             await self._activate_entity(self._open_entity)
         else:
-            # Normal open from closed state
+            # Normal open — no safeguard needed
             await self._activate_entity(self._open_entity)
 
         self._state = STATE_OPENING
@@ -205,21 +238,23 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
     async def async_close_cover(self, **kwargs) -> None:
         """Close the garage door.
 
-        If the door is currently opening, applies the safeguard:
-        sends close twice with a delay (first to stop, second to close).
+        Applies safeguard double-press when:
+        - The door is currently opening (interrupting movement), OR
+        - We're within the cooldown window after the last movement.
         """
         if self._state in (STATE_CLOSED, STATE_CLOSING):
             _LOGGER.debug("Garage IR Tuya: Already closed/closing, ignoring")
             return
 
-        if self._state == STATE_OPENING:
-            # Safeguard: door is opening → stop it, then close
-            _LOGGER.info("Garage IR Tuya: Safeguard — interrupting open to close")
+        if self._state == STATE_OPENING or self._in_cooldown():
+            # Safeguard: double-press needed
+            reason = "interrupting open" if self._state == STATE_OPENING else "cooldown active"
+            _LOGGER.info("Garage IR Tuya: Safeguard (%s) — double-press close", reason)
             await self._activate_entity(self._close_entity)
             await asyncio.sleep(SAFEGUARD_DELAY)
             await self._activate_entity(self._close_entity)
         else:
-            # Normal close from open state
+            # Normal close — no safeguard needed
             await self._activate_entity(self._close_entity)
 
         self._state = STATE_CLOSING
@@ -296,10 +331,13 @@ class GarageIRTuyaCover(CoverEntity, RestoreEntity):
             """Handle timer expiration — movement is complete."""
             self._state = target_state
             self._timer_unsub = None
+            self._last_movement_time = time.monotonic()
             self.async_write_ha_state()
             _LOGGER.info(
-                "Garage IR Tuya: Movement complete, state is now '%s'",
+                "Garage IR Tuya: Movement complete, state is now '%s'. "
+                "Cooldown started (%d min).",
                 target_state,
+                self._cooldown,
             )
 
         self._timer_unsub = async_call_later(

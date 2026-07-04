@@ -17,6 +17,8 @@ DEFAULT_DURATION = 15  # seconds
 
 # --- Safeguard ---
 SAFEGUARD_DELAY = 2  # seconds between double-press
+CONF_COOLDOWN = "cooldown"
+DEFAULT_COOLDOWN = 10  # minutes — post-movement window where double-press is needed
 
 # --- Force State Options ---
 FORCE_STATE_NO_CHANGE = "no_change"
