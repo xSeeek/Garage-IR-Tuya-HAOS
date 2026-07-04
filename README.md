@@ -38,7 +38,7 @@ Apple Home (HomeKit) → Home Assistant (Cover Entity) → Escenas/Scripts Tuya 
 2. Ve a **Integraciones**
 3. Haz clic en el menú **⋮** (tres puntos, arriba a la derecha) → **Repositorios personalizados**
 4. Agrega:
-   - **URL**: `https://github.com/TU_USUARIO/garage-ir-tuya`
+   - **URL**: `https://github.com/xSeeek/Garage-IR-Tuya-HAOS`
    - **Categoría**: `Integración`
 5. Haz clic en **Agregar**
 

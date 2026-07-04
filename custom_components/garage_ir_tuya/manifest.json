@@ -1,13 +1,13 @@
 {
   "domain": "garage_ir_tuya",
   "name": "Garage IR Tuya",
-  "codeowners": [],
+  "codeowners": ["@xSeeek"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/TU_USUARIO/garage-ir-tuya",
+  "documentation": "https://github.com/xSeeek/Garage-IR-Tuya-HAOS",
   "integration_type": "device",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/TU_USUARIO/garage-ir-tuya/issues",
+  "issue_tracker": "https://github.com/xSeeek/Garage-IR-Tuya-HAOS/issues",
   "requirements": [],
   "version": "1.0.0"
 }
