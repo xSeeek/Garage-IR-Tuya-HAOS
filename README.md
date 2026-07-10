@@ -1,4 +1,4 @@
-# 🏠 Garage IR Tuya
+# 🏠 Garage RF Tuya
 
 Convierte un portón de garage controlado por **radiofrecuencia (RF)** en un accesorio nativo de **Apple HomeKit**, usando un emisor IR/RF compatible con **Tuya** y **Home Assistant** como puente.
 
@@ -44,14 +44,14 @@ Apple Home (HomeKit) → Home Assistant (Cover Entity) → Escenas/Scripts Tuya 
 
 ### Paso 2: Instalar la integración
 
-1. Busca **"Garage IR Tuya"** en HACS
+1. Busca **"Garage RF Tuya"** en HACS
 2. Haz clic en **Descargar**
 3. **Reinicia Home Assistant**
 
 ### Paso 3: Configurar la integración
 
 1. Ve a **Ajustes → Dispositivos y servicios → + Agregar integración**
-2. Busca **"Garage IR Tuya"**
+2. Busca **"Garage RF Tuya"**
 3. Completa el formulario:
 
 | Campo | Descripción |
@@ -82,7 +82,7 @@ Si expones todas las entidades, el cover aparecerá automáticamente.
 Para modificar la configuración después de la instalación:
 
 1. Ve a **Ajustes → Dispositivos y servicios**
-2. Encuentra **Garage IR Tuya** → haz clic en **Configurar**
+2. Encuentra **Garage RF Tuya** → haz clic en **Configurar**
 3. Modifica los campos que necesites
 4. Usa **"Forzar estado actual"** si el estado se desfasó:
    - **Sin cambios** — No modifica el estado
